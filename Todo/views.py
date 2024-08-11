@@ -1,8 +1,8 @@
 from django.shortcuts import redirect, render
 from .models import Todo
 from django.db.models import Q
-from django.http import HttpResponse
 from django.utils.dateparse import parse_date
+from django.contrib import messages
 # Create your views here.
 def Home(request):
     todos = Todo.objects.all()
@@ -11,15 +11,19 @@ def Home(request):
 
 def add(request):
     if request.method == 'POST':
-        title = request.POST['title']
-        due_date = request.POST['due_date']
-        status = request.POST['status']
-        Todo.objects.create(
-            title = title,
-            due_date = due_date,
-            status = status
-        )
-        return redirect('home')
+        if request.POST['title'] and request.POST['due_date'] and request.POST['status'] != '':
+            title = request.POST['title']
+            due_date = request.POST['due_date']
+            status = request.POST['status']
+            Todo.objects.create(
+                title = title,
+                due_date = due_date,
+                status = status
+            )
+            return redirect('home')
+        else:
+            messages.error(request,"Form is not filled properly!!!")
+    
 
     return render(request,'todo/add.html')
 
