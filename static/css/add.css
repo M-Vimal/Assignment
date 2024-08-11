@@ -1,0 +1,30 @@
+.adddiv{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.insideform{
+    display: flex;
+    flex-direction: column;
+    border: 1px solid black;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+h1{
+    margin-left: 15%;
+}
+
+input{
+    padding: 5px;
+}
+
+.btn{
+    margin-top: 15px;
+}
+
+.label{
+    margin: 1%;
+}

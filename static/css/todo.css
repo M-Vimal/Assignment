@@ -1,0 +1,17 @@
+.maindiv{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 30px;
+
+}
+
+h1{
+    color:blue;
+}
+
+.searchdiv{
+    margin-bottom: 20px;
+}
+
