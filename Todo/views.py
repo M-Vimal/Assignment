@@ -148,12 +148,12 @@ def todolist(request):
                     Q(title__icontains=f' {word} ')
                 )
     if start_date:
-        start_date = parse_date(start_date)
+        start_date = datetime.strptime(start_date, "%d-%m-%Y").date()
         if start_date:
-            todos = Todo.objects.filter(~Q(status='done'),due_date__gte = start_date)
+            todos = todos.filter(~Q(status='done'),due_date__gt = start_date)
     if end_date:
-        end_date = parse_date(end_date)
+        end_date = datetime.strptime(end_date, "%d-%m-%Y").date()
         if end_date:
-            todos = Todo.objects.filter(~Q(status='done'),due_date__lte = end_date)
+            todos = Todo.objects.filter(~Q(status='done'),due_date__lt = end_date)
     return render(request, 'todo/Todos.html', {'todos': todos})
     
