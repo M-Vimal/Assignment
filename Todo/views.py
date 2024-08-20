@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.shortcuts import redirect, render
 from .models import Todo
 from django.db.models import Q
@@ -40,7 +41,112 @@ def todolist(request):
     todos = Todo.objects.all()
 
     if query:
-        todos = Todo.objects.filter(title__icontains = query)
+        query = query.lower()
+        start_date, end_date = None, None
+        query_filter = Q()
+
+        # Extract date filters
+        if " after " in query:
+            parts = query.split(" after ")
+            keywords = parts[0].strip()
+            remaining_part = parts[1].strip()
+
+            if " before " in remaining_part:
+                remaining_parts = remaining_part.split(" before ")
+                date_str_after = remaining_parts[0].strip()
+                date_str_before = remaining_parts[1].strip()
+                try:
+                    start_date = datetime.strptime(date_str_after, "%d-%m-%Y").date()
+                    end_date = datetime.strptime(date_str_before, "%d-%m-%Y").date()
+                except ValueError:
+                    print("Date format is incorrect. Please use dd-mm-yyyy.")
+            else:
+                date_str = remaining_part
+                try:
+                    start_date = datetime.strptime(date_str, "%d-%m-%Y").date()
+                except ValueError:
+                    print("Date format is incorrect. Please use dd-mm-yyyy.")
+        elif " before " in query:
+            parts = query.split(" before ")
+            keywords = parts[0].strip()
+            date_str = parts[1].strip()
+            try:
+                end_date = datetime.strptime(date_str, "%d-%m-%Y").date()
+            except ValueError:
+                print("Date format is incorrect. Please use dd-mm-yyyy.")
+        else:
+            keywords = query.strip()
+
+        # Process keywords with "and" or "or"
+        if " and " in keywords:
+            keyword_list = [kw.strip() for kw in keywords.split(" and ")]
+            for keyword in keyword_list:
+                query_filter &= (
+                    Q(title__iexact=keyword) |
+                    Q(title__startswith=f'{keyword} ') |
+                    Q(title__endswith=f' {keyword}') |
+                    Q(title__icontains=f' {keyword} ')
+                )
+        elif " or " in keywords:
+            keyword_list = [kw.strip() for kw in keywords.split(" or ")]
+            for keyword in keyword_list:
+                query_filter |= (
+                    Q(title__iexact=keyword) |
+                    Q(title__startswith=f'{keyword} ') |
+                    Q(title__endswith=f' {keyword}') |
+                    Q(title__icontains=f' {keyword} ')
+                )
+        else:
+            # Single keyword
+            query_filter = (
+                Q(title__iexact=keywords) |
+                Q(title__startswith=f'{keywords} ') |
+                Q(title__endswith=f' {keywords}') |
+                Q(title__icontains=f' {keywords} ')
+            )
+
+        # Apply keyword filter
+        todos = todos.filter(query_filter)
+
+        # Apply date filters
+        if start_date:
+            todos = todos.filter(due_date__gt=start_date)
+        if end_date:
+            todos = todos.filter(due_date__lt=end_date)
+
+        
+        
+        elif " or " in query.lower():
+            # Handle "or" logic
+            words = query.lower().split(" or ")
+            or_filter = Q()
+            for word in words:
+                or_filter |= (
+                    Q(title__iexact=word) |
+                    Q(title__startswith=f'{word} ') |
+                    Q(title__endswith=f' {word}') |
+                    Q(title__icontains=f' {word} ')
+                )
+            todos = todos.filter(or_filter)
+        elif " and " in query.lower():
+            words = query.lower().split(" and ")
+            for word in words:
+                todos = todos.filter(
+                    Q(title__iexact=word) |
+                    Q(title__startswith=f'{word} ') |
+                    Q(title__endswith=f' {word}') |
+                    Q(title__icontains=f' {word} ')
+                )
+        else:
+            # Handle "and" logic (default case)
+            words = query.split()
+            for word in words:
+                todos = todos.filter(
+                    Q(title__iexact=word) |
+                    Q(title__startswith=f'{word} ') |
+                    Q(title__endswith=f' {word}') |
+                    Q(title__icontains=f' {word} ')
+                )
     if start_date:
         start_date = parse_date(start_date)
         if start_date:
@@ -50,3 +156,4 @@ def todolist(request):
         if end_date:
             todos = Todo.objects.filter(~Q(status='done'),due_date__lte = end_date)
     return render(request, 'todo/Todos.html', {'todos': todos})
+    
